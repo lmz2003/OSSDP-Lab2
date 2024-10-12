@@ -50,14 +50,13 @@ import java.util.PriorityQueue;
 public class Solution7 {
 
     public String smallestStringWithSwaps(String s, List<List<Integer>> pairs) {
-
-        if (pairs.size() <= 1) {
-            return s;
+        if (pairs.isEmpty()) {
+            return s; // 如果没有可交换的索引对，直接返回原字符串
         }
 
-        // 第 1 步：将任意交换的结点对输入并查集
+        // 第 1 步：构建并查集
         int len = s.length();
-        UnionFind unionFind = new UnionFind(len-1);
+        UnionFind unionFind = new UnionFind(len);
         for (List<Integer> pair : pairs) {
             int index1 = pair.get(0);
             int index2 = pair.get(1);
@@ -66,36 +65,33 @@ public class Solution7 {
 
         // 第 2 步：构建映射关系
         char[] charArray = s.toCharArray();
-        // key：连通分量的代表元，value：同一个连通分量的字符集合（保存在一个优先队列中）
-        Map<Integer, PriorityQueue<Character>> hashMap = new HashMap<>(len);
-        for (int i = 0; i < len; i++)
+        Map<Integer, PriorityQueue<Character>> hashMap = new HashMap<>();
+        for (int i = 0; i < len; i++) {
             int root = unionFind.find(i);
+            // 将同一连通分量的字符放入优先队列中
             hashMap.computeIfAbsent(root, key -> new PriorityQueue<>()).offer(charArray[i]);
+        }
 
         // 第 3 步：重组字符串
         StringBuilder stringBuilder = new StringBuilder();
         for (int i = 0; i < len; i++) {
             int root = unionFind.find(i);
+            // 从优先队列中取出最小的字符
             stringBuilder.append(hashMap.get(root).poll());
-            stringBuilder.append(" ");
         }
         return stringBuilder.toString();
     }
 
     private class UnionFind {
-
         private int[] parent;
-        /**
-         * 以 i 为根结点的子树的高度（引入了路径压缩以后该定义并不准确）
-         */
         private int[] rank;
 
         public UnionFind(int n) {
             this.parent = new int[n];
             this.rank = new int[n];
             for (int i = 0; i < n; i++) {
-                this.parent[i] = i;
-                this.rank[i] = 1;
+                this.parent[i] = i; // 每个节点的父节点初始为自己
+                this.rank[i] = 1; // 初始高度为 1
             }
         }
 
@@ -103,25 +99,23 @@ public class Solution7 {
             int rootX = find(x);
             int rootY = find(y);
             if (rootX == rootY) {
-                return;
+                return; // 如果已经在同一个集合中，则不合并
             }
 
-            if (rank[rootX] == rank[rootY]) {
-                parent[rootX] = rootY;
-                // 此时以 rootY 为根结点的树的高度仅加了 1
-                rank[rootY]++;
-            } else if (rank[rootX] < rank[rootY]) {
-                parent[rootX] = rootY;
-                // 此时以 rootY 为根结点的树的高度不变
+            // 合并时根据 rank 更新
+            if (rank[rootX] < rank[rootY]) {
+                parent[rootX] = rootY; // 让 rootX 指向 rootY
+            } else if (rank[rootX] > rank[rootY]) {
+                parent[rootY] = rootX; // 让 rootY 指向 rootX
             } else {
-                // 同理，此时以 rootX 为根结点的树的高度不变
-                parent[rootY] = rootX;
+                parent[rootY] = rootX; // 让 rootY 指向 rootX
+                rank[rootX]++; // 增加 rootX 的高度
             }
         }
 
         public int find(int x) {
             if (x != parent[x]) {
-                parent[x] = find(parent[x]);
+                parent[x] = find(parent[x]); // 路径压缩
             }
             return parent[x];
         }
