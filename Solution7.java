@@ -47,16 +47,18 @@ import java.util.PriorityQueue;
  *
  */
 
+
 public class Solution7 {
 
     public String smallestStringWithSwaps(String s, List<List<Integer>> pairs) {
-        if (pairs.isEmpty()) {
-            return s; // 如果没有可交换的索引对，直接返回原字符串
+
+        if (pairs.size() <= 1) {
+            return s;
         }
 
-        // 第 1 步：构建并查集
+        // 第 1 步：将任意交换的结点对输入并查集
         int len = s.length();
-        UnionFind unionFind = new UnionFind(len);
+        UnionFind unionFind = new UnionFind(len);  // 修正为len
         for (List<Integer> pair : pairs) {
             int index1 = pair.get(0);
             int index2 = pair.get(1);
@@ -65,10 +67,10 @@ public class Solution7 {
 
         // 第 2 步：构建映射关系
         char[] charArray = s.toCharArray();
-        Map<Integer, PriorityQueue<Character>> hashMap = new HashMap<>();
+        // key：连通分量的代表元，value：同一个连通分量的字符集合（保存在一个优先队列中）
+        Map<Integer, PriorityQueue<Character>> hashMap = new HashMap<>(len);
         for (int i = 0; i < len; i++) {
             int root = unionFind.find(i);
-            // 将同一连通分量的字符放入优先队列中
             hashMap.computeIfAbsent(root, key -> new PriorityQueue<>()).offer(charArray[i]);
         }
 
@@ -76,22 +78,22 @@ public class Solution7 {
         StringBuilder stringBuilder = new StringBuilder();
         for (int i = 0; i < len; i++) {
             int root = unionFind.find(i);
-            // 从优先队列中取出最小的字符
-            stringBuilder.append(hashMap.get(root).poll());
+            stringBuilder.append(hashMap.get(root).poll());  // 不再附加空格
         }
         return stringBuilder.toString();
     }
 
     private class UnionFind {
+
         private int[] parent;
         private int[] rank;
 
         public UnionFind(int n) {
-            this.parent = new int[n];
+            this.parent = new int[n];  // 修正为n
             this.rank = new int[n];
             for (int i = 0; i < n; i++) {
-                this.parent[i] = i; // 每个节点的父节点初始为自己
-                this.rank[i] = 1; // 初始高度为 1
+                this.parent[i] = i;
+                this.rank[i] = 1;
             }
         }
 
@@ -99,25 +101,25 @@ public class Solution7 {
             int rootX = find(x);
             int rootY = find(y);
             if (rootX == rootY) {
-                return; // 如果已经在同一个集合中，则不合并
+                return;
             }
 
-            // 合并时根据 rank 更新
-            if (rank[rootX] < rank[rootY]) {
-                parent[rootX] = rootY; // 让 rootX 指向 rootY
-            } else if (rank[rootX] > rank[rootY]) {
-                parent[rootY] = rootX; // 让 rootY 指向 rootX
+            if (rank[rootX] == rank[rootY]) {
+                parent[rootX] = rootY;
+                rank[rootY]++;
+            } else if (rank[rootX] < rank[rootY]) {
+                parent[rootX] = rootY;
             } else {
-                parent[rootY] = rootX; // 让 rootY 指向 rootX
-                rank[rootX]++; // 增加 rootX 的高度
+                parent[rootY] = rootX;
             }
         }
 
         public int find(int x) {
             if (x != parent[x]) {
-                parent[x] = find(parent[x]); // 路径压缩
+                parent[x] = find(parent[x]);
             }
             return parent[x];
         }
     }
 }
+
